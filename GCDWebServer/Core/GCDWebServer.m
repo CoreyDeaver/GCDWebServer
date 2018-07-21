@@ -198,6 +198,7 @@ static void _ExecuteMainThreadRunLoopSources() {
 #endif
 }
 
+#ifndef TARGET_IS_EXTENSION
 #if TARGET_OS_IPHONE
 
 // Always called on main thread
@@ -217,6 +218,7 @@ static void _ExecuteMainThreadRunLoopSources() {
 }
 
 #endif
+#endif
 
 // Always called on main thread
 - (void)_didConnect {
@@ -225,10 +227,12 @@ static void _ExecuteMainThreadRunLoopSources() {
   _connected = YES;
   GWS_LOG_DEBUG(@"Did connect");
 
+#ifndef TARGET_IS_EXTENSION
 #if TARGET_OS_IPHONE
   if ([[UIApplication sharedApplication] applicationState] != UIApplicationStateBackground) {
     [self _startBackgroundTask];
   }
+#endif
 #endif
 
   if ([_delegate respondsToSelector:@selector(webServerDidConnect:)]) {
@@ -257,6 +261,7 @@ static void _ExecuteMainThreadRunLoopSources() {
   });
 }
 
+#ifndef TARGET_IS_EXTENSION
 #if TARGET_OS_IPHONE
 
 // Always called on main thread
@@ -272,6 +277,7 @@ static void _ExecuteMainThreadRunLoopSources() {
   }
 }
 
+#endif
 #endif
 
 // Always called on main thread
@@ -732,21 +738,28 @@ static inline NSString* _EncodeBase64(NSString* string) {
 - (BOOL)startWithOptions:(NSDictionary*)options error:(NSError**)error {
   if (_options == nil) {
     _options = options ? [options copy] : @{};
+#ifndef TARGET_IS_EXTENSION
 #if TARGET_OS_IPHONE
     _suspendInBackground = [_GetOption(_options, GCDWebServerOption_AutomaticallySuspendInBackground, @YES) boolValue];
     if (((_suspendInBackground == NO) || ([[UIApplication sharedApplication] applicationState] != UIApplicationStateBackground)) && ![self _start:error])
 #else
     if (![self _start:error])
 #endif
+#else
+    if (![self _start:error])
+#endif
+
     {
       _options = nil;
       return NO;
     }
+#ifndef TARGET_IS_EXTENSION
 #if TARGET_OS_IPHONE
     if (_suspendInBackground) {
       [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_didEnterBackground:) name:UIApplicationDidEnterBackgroundNotification object:nil];
       [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(_willEnterForeground:) name:UIApplicationWillEnterForegroundNotification object:nil];
     }
+#endif
 #endif
     return YES;
   } else {
@@ -761,11 +774,13 @@ static inline NSString* _EncodeBase64(NSString* string) {
 
 - (void)stop {
   if (_options) {
+#ifndef TARGET_IS_EXTENSION
 #if TARGET_OS_IPHONE
     if (_suspendInBackground) {
       [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidEnterBackgroundNotification object:nil];
       [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationWillEnterForegroundNotification object:nil];
     }
+#endif
 #endif
     if (_source4) {
       [self _stop];
