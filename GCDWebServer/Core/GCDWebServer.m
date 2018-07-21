@@ -287,8 +287,10 @@ static void _ExecuteMainThreadRunLoopSources() {
   _connected = NO;
   GWS_LOG_DEBUG(@"Did disconnect");
 
+#ifndef TARGET_IS_EXTENSION
 #if TARGET_OS_IPHONE
   [self _endBackgroundTask];
+#endif
 #endif
 
   if ([_delegate respondsToSelector:@selector(webServerDidDisconnect:)]) {
